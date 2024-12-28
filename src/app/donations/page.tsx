@@ -1,17 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { use } from "react";
 import Image from "next/image";
 import { 
-  Search, 
-  Filter, 
   BadgeCheck, 
-  ArrowUpRight,
-  SlidersHorizontal
+  Heart, 
+  Share2 
 } from "lucide-react";
 
-interface Donation {
+interface DonationData {
   id: string;
   title: string;
   description: string;
@@ -19,186 +17,197 @@ interface Donation {
     name: string;
     isVerified: boolean;
     logo: string;
+    description: string;
   };
   category: string;
   targetAmount: number;
   currentAmount: number;
+  donorsCount: number;
   daysLeft: number;
   image: string;
-  donorsCount: number;
+  updates: Array<{
+    date: string;
+    content: string;
+  }>;
 }
 
-export default function DonationsPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [showFilters, setShowFilters] = useState(false);
+interface DonationPageProps {
+  params: Promise<{ id: string }>;
+}
 
-  // Sample data - replace with API call
-  const donations: Donation[] = [
-    {
-      id: "1",
-      title: "Medical Equipment for Children's Hospital",
-      description: "Help us provide essential medical equipment to treat children in need.",
-      organization: {
-        name: "Health Care Foundation",
-        isVerified: true,
-        logo: "/org-logo1.jpg"
-      },
-      category: "Medical",
-      targetAmount: 50000,
-      currentAmount: 35000,
-      daysLeft: 30,
-      image: "/donation1.jpg",
-      donorsCount: 145
+function DonationContent({ donationId }: { donationId: string }) {
+  const [donationAmount, setDonationAmount] = useState<string>("");
+  const predefinedAmounts = [10, 25, 50, 100];
+
+  // This would come from your API based on the ID
+  const donation: DonationData = {
+    id: donationId,
+    title: "Medical Equipment for Children's Hospital",
+    description: "Help us provide essential medical equipment to treat children in need. Your support will directly contribute to improving healthcare facilities and ensuring better medical care for children.",
+    organization: {
+      name: "Health Care Foundation",
+      isVerified: true,
+      logo: "/org-logo1.jpg",
+      description: "A non-profit organization dedicated to improving healthcare access."
     },
-    // Add more sample donations
-  ];
+    category: "Medical",
+    targetAmount: 50000,
+    currentAmount: 35000,
+    donorsCount: 145,
+    daysLeft: 30,
+    image: "/donation1.jpg",
+    updates: [
+      {
+        date: "2024-03-15",
+        content: "Successfully purchased first batch of equipment. Thank you for your support!"
+      }
+    ]
+  };
 
-  const categories = [
-    "Medical",
-    "Education",
-    "Disaster Relief",
-    "Environment",
-    "Animals",
-    "Community"
-  ];
+  const getProgressPercentage = () => {
+    return Math.min((donation.currentAmount / donation.targetAmount) * 100, 100);
+  };
 
-  const getProgressPercentage = (current: number, target: number) => {
-    return Math.min((current / target) * 100, 100);
+  const handleDonateClick = async () => {
+    if (!donationAmount) return;
+    // Add your donation handling logic here
+    console.log(`Processing donation of $${donationAmount}`);
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Donation Campaigns</h1>
-        <p className="mt-2 text-gray-600">Support causes you care about and make a difference</p>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="mb-8">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search campaigns..."
-              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Campaign Image */}
+          <div className="relative aspect-video w-full rounded-xl overflow-hidden">
+            <Image
+              src={donation.image}
+              alt={donation.title}
+              fill
+              className="object-cover"
+              priority
             />
           </div>
 
-          {/* Filter Toggle */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-          >
-            <SlidersHorizontal className="h-5 w-5 mr-2" />
-            Filters
-          </button>
-        </div>
+          {/* Organization Info */}
+          <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-sm">
+            <div className="flex items-center space-x-3">
+              <Image
+                src={donation.organization.logo}
+                alt={donation.organization.name}
+                width={48}
+                height={48}
+                className="rounded-full"
+              />
+              <div>
+                <div className="flex items-center">
+                  <h3 className="font-medium text-gray-900">{donation.organization.name}</h3>
+                  {donation.organization.isVerified && (
+                    <BadgeCheck className="ml-1 h-5 w-5 text-blue-500" aria-label="Verified Organization" />
+                  )}
+                </div>
+                <p className="text-sm text-gray-500">Verified Organization</p>
+              </div>
+            </div>
+            <button 
+              className="text-gray-400 hover:text-gray-500"
+              aria-label="Share campaign"
+            >
+              <Share2 className="h-5 w-5" />
+            </button>
+          </div>
 
-        {/* Expanded Filters */}
-        {showFilters && (
-          <div className="mt-4 p-4 bg-white rounded-lg border">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-              <button
-                onClick={() => setSelectedCategory("all")}
-                className={`px-4 py-2 rounded-lg text-sm ${
-                  selectedCategory === "all"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                All Categories
-              </button>
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-lg text-sm ${
-                    selectedCategory === category
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {category}
-                </button>
+          {/* Campaign Details */}
+          <div className="bg-white p-6 rounded-lg shadow-sm">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">{donation.title}</h1>
+            <p className="text-gray-600 mb-6">{donation.description}</p>
+            
+            {/* Campaign Updates */}
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-gray-900">Campaign Updates</h2>
+              {donation.updates.map((update, index) => (
+                <div key={index} className="border-l-4 border-blue-500 pl-4">
+                  <time className="text-sm text-gray-500">{new Date(update.date).toLocaleDateString()}</time>
+                  <p className="text-gray-600">{update.content}</p>
+                </div>
               ))}
             </div>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Donations Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {donations.map((donation) => (
-          <Link 
-            href={`/donations/${donation.id}`}
-            key={donation.id}
-            className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-          >
-            {/* Campaign Image */}
-            <div className="relative h-48">
-              <Image
-                src={donation.image}
-                alt={donation.title}
-                layout="fill"
-                objectFit="cover"
-              />
-            </div>
-
-            {/* Campaign Info */}
-            <div className="p-4">
-              {/* Organization Info */}
-              <div className="flex items-center mb-2">
-                <Image
-                  src={donation.organization.logo}
-                  alt={donation.organization.name}
-                  width={24}
-                  height={24}
-                  className="rounded-full"
+        {/* Donation Side Panel */}
+        <div className="lg:col-span-1">
+          <div className="bg-white p-6 rounded-lg shadow-sm sticky top-4">
+            {/* Progress */}
+            <div className="mb-6">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="font-medium">${donation.currentAmount.toLocaleString()}</span>
+                <span className="text-gray-500">of ${donation.targetAmount.toLocaleString()}</span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full">
+                <div 
+                  className="h-2 bg-blue-600 rounded-full transition-all duration-500"
+                  style={{ width: `${getProgressPercentage()}%` }}
+                  role="progressbar"
+                  aria-valuenow={getProgressPercentage()}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
                 />
-                <span className="ml-2 text-sm text-gray-600">
-                  {donation.organization.name}
-                </span>
-                {donation.organization.isVerified && (
-                  <BadgeCheck className="ml-1 h-4 w-4 text-blue-500" />
-                )}
-              </div>
-
-              {/* Campaign Title */}
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {donation.title}
-              </h3>
-
-              {/* Progress Bar */}
-              <div className="mt-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="font-medium">${donation.currentAmount.toLocaleString()}</span>
-                  <span className="text-gray-500">of ${donation.targetAmount.toLocaleString()}</span>
-                </div>
-                <div className="h-2 bg-gray-200 rounded-full">
-                  <div 
-                    className="h-2 bg-blue-600 rounded-full"
-                    style={{ width: `${getProgressPercentage(donation.currentAmount, donation.targetAmount)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Campaign Stats */}
-              <div className="mt-4 flex items-center justify-between text-sm text-gray-500">
-                <div>{donation.donorsCount} donors</div>
-                <div>{donation.daysLeft} days left</div>
               </div>
             </div>
-          </Link>
-        ))}
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">{donation.donorsCount}</div>
+                <div className="text-sm text-gray-500">Donors</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">{getProgressPercentage()}%</div>
+                <div className="text-sm text-gray-500">Funded</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">{donation.daysLeft}</div>
+                <div className="text-sm text-gray-500">Days Left</div>
+              </div>
+            </div>
+
+            {/* Donation Form */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                {predefinedAmounts.map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => setDonationAmount(amount.toString())}
+                    className={`px-4 py-2 rounded-lg border transition-colors ${
+                      donationAmount === amount.toString()
+                        ? 'border-blue-600 bg-blue-50 text-blue-600'
+                        : 'border-gray-300 hover:border-blue-600'
+                    }`}
+                  >
+                    ${amount}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleDonateClick}
+                disabled={!donationAmount}
+              >
+                <Heart className="h-5 w-5 mr-2" />
+                Donate Now
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
+}
+
+export default function DonationDetailPage({ params }: DonationPageProps) {
+  const resolvedParams = use(params);
+  return <DonationContent donationId={resolvedParams.id} />;
 }

@@ -1,26 +1,16 @@
+// components/auth/LoginForm.tsx
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Phone, Eye, EyeOff } from "lucide-react";
+import { signIn } from "next-auth/react";
+import Image from "next/image";
+import { Mail, Lock, Loader } from "lucide-react";
 
-interface LoginFormProps {
-  onSubmit: (data: {
-    email?: string;
-    password?: string;
-    phone?: string;
-    otp?: string;
-  }) => Promise<void>;
-  isLoading?: boolean;
-}
-
-export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
+export function LoginForm() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isOtpSent, setIsOtpSent] = useState(false);
-
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -28,67 +18,56 @@ export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
     otp: ''
   });
 
-  const [errors, setErrors] = useState({
-    email: '',
-    password: '',
-    phone: '',
-    otp: ''
-  });
+  // Handle social login
+  const handleSocialLogin = async (provider: 'google' | 'facebook') => {
+    try {
+      setIsLoading(true);
+      const result = await signIn(provider, {
+        callbackUrl: '/',
+        redirect: false,
+      });
 
-  const validateForm = () => {
-    const newErrors = {
-      email: '',
-      password: '',
-      phone: '',
-      otp: ''
-    };
-
-    if (loginMethod === 'email') {
-      if (!formData.email) {
-        newErrors.email = 'Email is required';
-      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email';
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
-      if (!formData.password) {
-        newErrors.password = 'Password is required';
+      if (result?.url) {
+        router.push('/');
       }
-    } else {
-      if (!formData.phone) {
-        newErrors.phone = 'Phone number is required';
-      }
-
-      if (isOtpSent && !formData.otp) {
-        newErrors.otp = 'OTP is required';
-      }
+    } catch (error) {
+      console.error('Social login error:', error);
+    } finally {
+      setIsLoading(false);
     }
-
-    setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== '');
   };
 
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    setIsLoading(true);
 
     try {
-      await onSubmit(formData);
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
+      // Redirect to homepage on success
+      router.push('/');
     } catch (error) {
       console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
     }
-  };
-
-  const handleSendOTP = async () => {
-    if (!formData.phone) {
-      setErrors({ ...errors, phone: 'Phone number is required' });
-      return;
-    }
-    // Add OTP sending logic here
-    setIsOtpSent(true);
   };
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-md mx-auto">
       {/* Login Method Toggle */}
       <div className="flex rounded-lg border p-1 mb-6">
         <button
@@ -115,143 +94,108 @@ export function LoginForm({ onSubmit, isLoading = false }: LoginFormProps) {
         </button>
       </div>
 
+      {/* Social Login Buttons */}
+      <div className="space-y-3 mb-6">
+        <button
+          onClick={() => handleSocialLogin('google')}
+          className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+          disabled={isLoading}
+        >
+          <Image
+            src="/icons/google.svg"
+            alt="Google"
+            width={20}
+            height={20}
+            className="mr-2"
+          />
+          Continue with Google
+        </button>
+
+        <button
+          onClick={() => handleSocialLogin('facebook')}
+          className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+          disabled={isLoading}
+        >
+          <Image
+            src="/icons/facebook.svg"
+            alt="Facebook"
+            width={20}
+            height={20}
+            className="mr-2"
+          />
+          Continue with Facebook
+        </button>
+      </div>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">Or continue with</span>
+        </div>
+      </div>
+
+      {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {loginMethod === 'email' ? (
           <>
-            {/* Email Input */}
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address
+              </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <input
                   type="email"
-                  placeholder="Email address"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className={`block w-full pl-10 pr-3 py-2 border ${
-                    errors.email ? 'border-red-300' : 'border-gray-300'
-                  } rounded-lg focus:ring-blue-500 focus:border-blue-500`}
+                  className="pl-10 w-full py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter your email"
                   disabled={isLoading}
                 />
               </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-              )}
             </div>
 
-            {/* Password Input */}
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Password
+              </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Password"
+                  type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className={`block w-full pl-10 pr-10 py-2 border ${
-                    errors.password ? 'border-red-300' : 'border-gray-300'
-                  } rounded-lg focus:ring-blue-500 focus:border-blue-500`}
+                  className="pl-10 w-full py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter your password"
                   disabled={isLoading}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
               </div>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-              )}
             </div>
           </>
         ) : (
-          <>
-            {/* Phone Input */}
-            <div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="tel"
-                  placeholder="Phone number"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className={`block w-full pl-10 pr-3 py-2 border ${
-                    errors.phone ? 'border-red-300' : 'border-gray-300'
-                  } rounded-lg focus:ring-blue-500 focus:border-blue-500`}
-                  disabled={isLoading || isOtpSent}
-                />
-              </div>
-              {errors.phone && (
-                <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-              )}
-            </div>
-
-            {/* OTP Input */}
-            {isOtpSent && (
-              <div>
-                <div className="flex gap-2">
-                  {Array.from({ length: 4 }).map((_, index) => (
-                    <input
-                      key={index}
-                      type="text"
-                      maxLength={1}
-                      className="w-12 h-12 text-center border border-gray-300 rounded-lg text-lg focus:ring-blue-500 focus:border-blue-500"
-                      value={formData.otp[index] || ''}
-                      onChange={(e) => {
-                        const otp = formData.otp.split('');
-                        otp[index] = e.target.value;
-                        setFormData({ ...formData, otp: otp.join('') });
-                        if (e.target.value && e.target.nextSibling) {
-                          (e.target.nextSibling as HTMLInputElement).focus();
-                        }
-                      }}
-                      disabled={isLoading}
-                    />
-                  ))}
-                </div>
-                {errors.otp && (
-                  <p className="mt-1 text-sm text-red-600">{errors.otp}</p>
-                )}
-              </div>
-            )}
-          </>
+          // Phone OTP Login Implementation
+          // Add your phone OTP login form here
+          <div>
+            {/* Phone input and OTP verification components */}
+          </div>
         )}
 
-        {/* Submit Button */}
         <button
           type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          className="w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center"
           disabled={isLoading}
         >
-          {isLoading ? 'Loading...' : loginMethod === 'email' ? 'Sign In' : isOtpSent ? 'Verify OTP' : 'Send OTP'}
+          {isLoading ? (
+            <>
+              <Loader className="animate-spin h-5 w-5 mr-2" />
+              Signing in...
+            </>
+          ) : (
+            'Sign In'
+          )}
         </button>
-
-        {/* Links */}
-        <div className="flex items-center justify-between text-sm">
-          <Link 
-            href="/auth/forgot-password" 
-            className="text-blue-600 hover:text-blue-500"
-          >
-            Forgot password?
-          </Link>
-          <Link 
-            href="/auth/register" 
-            className="text-blue-600 hover:text-blue-500"
-          >
-            Create account
-          </Link>
-        </div>
       </form>
     </div>
   );

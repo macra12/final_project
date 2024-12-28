@@ -8,8 +8,6 @@ import {
   AlertCircle, 
   Eye, 
   Search,
-  Filter,
-  MoreVertical,
   Check,
   X
 } from "lucide-react";

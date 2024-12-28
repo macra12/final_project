@@ -10,7 +10,8 @@ import {
   MoreVertical, 
   ArrowUpRight,
   Calendar,
-  DollarSign
+  DollarSign,
+  Users // Added Users import
 } from "lucide-react";
 
 interface Donation {

@@ -1,35 +1,135 @@
+import Link from 'next/link';
+import Image from 'next/image';
+import { ArrowRight } from 'lucide-react'; // Add this import
+
+interface TrendingCampaign {
+  id: string;
+  title: string;
+  image: string;
+  description: string;
+  currentAmount: number;
+  targetAmount: number;
+  donorsCount: number;
+  daysLeft: number;
+}
+
 export default function Home() {
+  // Sample trending campaigns data
+  const trendingCampaigns: TrendingCampaign[] = [
+    {
+      id: "1",
+      title: "School Building Project",
+      image: "/campaigns/education.jpg",
+      description: "Help us build a new school for  children...",
+      currentAmount: 25000,
+      targetAmount: 50000,
+      donorsCount: 150,
+      daysLeft: 15
+    },
+    {
+      id: "2",
+      title: "Medical Equipment Fund",
+      image: "/campaigns/medical.jpg",
+      description: "Support our hospital with new medical equipment...",
+      currentAmount: 35000,
+      targetAmount: 40000,
+      donorsCount: 220,
+      daysLeft: 10
+    },
+    {
+      id: "3",
+      title: "Clean Water Initiative",
+      image: "/campaigns/water.jpg",
+      description: "Provide clean water access to rural communities...",
+      currentAmount: 15000,
+      targetAmount: 30000,
+      donorsCount: 180,
+      daysLeft: 20
+    }
+  ];
+
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="relative bg-blue-600 text-white py-20">
+      <section className="relative bg-blue-600 text-white py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
+          <div className="relative z-10">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               Make a Difference Today
             </h1>
-            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              Support causes you care about and join a community of givers making positive change in the world.
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl">
+              Join our community of donors and support causes that matter. Every donation counts towards creating positive change.
             </p>
-            <div className="flex justify-center gap-4">
-              <a
-                href="/donations"
-                className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors"
-              >
-                Donate Now
-              </a>
-              <a
-                href="/about"
-                className="bg-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-400 transition-colors"
-              >
-                Learn More
-              </a>
-            </div>
+            <Link
+              href="/auth/register"
+              className="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+            >
+              Get Started
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Impact Stats */}
+      {/* Trending Campaigns Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">Trending Campaigns</h2>
+            <Link 
+              href="/categories"
+              className="text-blue-600 hover:text-blue-700 flex items-center"
+            >
+              View all
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {trendingCampaigns.map((campaign) => (
+              <div key={campaign.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div className="relative aspect-video">
+                  <Image
+                    src={campaign.image}
+                    alt={campaign.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {campaign.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4">
+                    {campaign.description}
+                  </p>
+                  <div className="mb-4">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium">${campaign.currentAmount.toLocaleString()}</span>
+                      <span className="text-gray-500">of ${campaign.targetAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full">
+                      <div 
+                        className="h-2 bg-blue-600 rounded-full" 
+                        style={{ width: `${(campaign.currentAmount / campaign.targetAmount) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-500 mb-4">
+                    <span>{campaign.donorsCount} donors</span>
+                    <span>{campaign.daysLeft} days left</span>
+                  </div>
+                  <Link
+                    href={`/donations/${campaign.id}`}
+                    className="block text-center bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Donate Now
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
@@ -121,12 +221,12 @@ export default function Home() {
           <p className="text-blue-100 mb-8 max-w-2xl mx-auto">
             Join thousands of donors who are creating positive change in the world.
           </p>
-          <a
+          <Link
             href="/auth/register"
             className="inline-block bg-white text-blue-600 px-8 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors"
           >
             Get Started
-          </a>
+          </Link>
         </div>
       </section>
     </div>
